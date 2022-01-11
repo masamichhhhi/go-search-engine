@@ -33,3 +33,7 @@ func NewTokenStream(tokens []Token) TokenStream {
 		Tokens: tokens,
 	}
 }
+
+func (ts TokenStream) Size() int {
+	return len(ts.Tokens)
+}

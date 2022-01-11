@@ -11,3 +11,8 @@ require (
 	github.com/ikawaha/kagome-dict-ipa-neologd/internal/mod1 v0.2.0 // indirect
 	github.com/ikawaha/kagome/v2 v2.7.0
 )
+
+require (
+	github.com/kotaroooo0/gojaconv v0.0.0-20210223133819-8a8c2bab5241 // indirect
+	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5 // indirect
+)
