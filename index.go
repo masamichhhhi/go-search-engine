@@ -50,6 +50,15 @@ type Postings struct {
 	Next       *Postings
 }
 
+func NewPosting(documentID DocumentID, positions []uint64, next *Postings) *Postings {
+	return &Postings{
+		DocumentID: documentID,
+		Positions:  positions,
+		Next:       next,
+	}
+}
+
+// 挿入
 func (p *Postings) PushBack(e *Postings) {
 	e.Next = p.Next
 	p.Next = e
