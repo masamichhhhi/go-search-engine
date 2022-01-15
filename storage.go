@@ -7,7 +7,7 @@ type Storage interface {
 	AddDocument(Document) (DocumentID, error)
 	AddToken(token Token) (TokenID, error)
 	GetTokenByTerm(string) (*Token, error)
-	GetTokensByTerms(string) ([]Token, error)
+	GetTokensByTerms([]string) ([]Token, error)
 	GetInvertedIndexByTokenIDs([]TokenID) (InvertedIndex, error)
 	UpsertInvertedIndex(InvertedIndex) error
 }
