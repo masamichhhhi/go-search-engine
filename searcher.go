@@ -1,5 +1,7 @@
 package gosearchengine
 
+import "sort"
+
 type Logic int
 
 const (
@@ -38,6 +40,7 @@ func (ms MatchSearcher) Search() ([]Document, error) {
 		return []Document{}, nil
 	}
 
+	// ストレージから転置インデックスをREAD
 	inverted, err := ms.storage.GetInvertedIndexByTokenIDs(tokenIDs(tokens))
 	if err != nil {
 		return nil, err
@@ -76,6 +79,89 @@ func tokenIDs(tokens []Token) []TokenID {
 	return ids
 }
 
-func andMatch(postings []*Postings) DocumentID
+// 全てのポスティングリストがnilではない
+func notAllNil(postings []*Postings) bool {
+	for _, p := range postings {
+		if p == nil {
+			return false
+		}
+	}
+	return true
+}
 
-func orMatch(postings []*Postings) DocumentID
+func allNil(postings []*Postings) bool {
+	for _, p := range postings {
+		if p != nil {
+			return false
+		}
+	}
+	return true
+}
+
+func isSameDocumentId(postings []*Postings) bool {
+	for i := 0; i < len(postings)-1; i++ {
+		if postings[i].DocumentID != postings[i+1].DocumentID {
+			return false
+		}
+	}
+	return true
+}
+
+func next(postings []*Postings) {
+	for i := range postings {
+		postings[i] = postings[i].Next
+	}
+}
+
+// ポスティングリストのスライスから最小のドキュメントIDを指しているポスティングリストのインデックス
+func minDocumentIDIndex(postings []*Postings) int {
+	min := 0
+	for i := 1; i < len(postings); i++ {
+		if postings[min].DocumentID > postings[i].DocumentID {
+			min = i
+		}
+	}
+	return min
+}
+
+// ドキュメントIDのスライスで重複を削除
+func uniqueDocumentId(ids []DocumentID) []DocumentID {
+	m := make(map[DocumentID]struct{})
+	for _, id := range ids {
+		m[id] = struct{}{}
+	}
+	uniq := []DocumentID{}
+	for k := range m {
+		uniq = append(uniq, k)
+	}
+	sort.Slice(uniq, func(i, j int) bool { return uniq[i] < uniq[j] })
+	return uniq
+}
+
+func andMatch(postings []*Postings) []DocumentID {
+	var ids []DocumentID = make([]DocumentID, 0)
+	for notAllNil(postings) {
+		if isSameDocumentId(postings) {
+			ids = append(ids, postings[0].DocumentID)
+			next(postings)
+			continue
+		}
+		idx := minDocumentIDIndex(postings)
+		postings[idx] = postings[idx].Next
+	}
+	return ids
+}
+
+func orMatch(postings []*Postings) []DocumentID {
+	ids := []DocumentID{}
+	for !allNil(postings) {
+		for i, p := range postings {
+			if p == nil {
+				continue
+			}
+			ids = append(ids, p.DocumentID)
+			postings[i] = postings[i].Next
+		}
+	}
+	return uniqueDocumentId(ids)
+}
