@@ -1,6 +1,8 @@
 package gosearchengine
 
-import "sort"
+import (
+	"sort"
+)
 
 type Logic int
 
@@ -164,4 +166,104 @@ func orMatch(postings []*Postings) []DocumentID {
 		}
 	}
 	return uniqueDocumentId(ids)
+}
+
+type PhraseSearcher struct {
+	tokenStream TokenStream
+	storage     Storage
+	sorter      Sorter
+}
+
+func (ps PhraseSearcher) Search() ([]Document, error) {
+	// tokenStreamがからなら、マッチするドキュメントなしでリターン
+	if ps.tokenStream.Size() == 0 {
+		return []Document{}, nil
+	}
+
+	tokens, err := ps.storage.GetTokensByTerms(ps.tokenStream.Terms())
+	if err != nil {
+		return nil, err
+	}
+
+	// 対応トークンが一つも存在しないなら、マッチするドキュメントなしでリターン
+	if len(tokens) != len(ps.tokenStream.Terms()) {
+		return []Document{}, nil
+	}
+
+	inverted, err := ps.storage.GetInvertedIndexByTokenIDs(tokenIDs(tokens))
+	if err != nil {
+		return nil, err
+	}
+
+	postings := make([]*Postings, len(inverted))
+	for i, t := range tokens {
+		postings[i] = inverted[t.ID].Postings
+	}
+
+	var ids []DocumentID
+	for notAllNil(postings) {
+		// カーソルが指す全てのDocIDが等しい時
+		if isSameDocumentId(postings) {
+
+			if isPhraseMatch(ps.tokenStream, postings) {
+				ids = append(ids, postings[0].DocumentID)
+
+			}
+			next(postings)
+			continue
+		}
+		// 一番小さいカーソルを動かす
+		idx := minDocumentIDIndex(postings)
+		postings[idx] = postings[idx].Next
+	}
+
+	documents, err := ps.storage.GetDocuments(ids)
+	if err != nil {
+		return nil, err
+	}
+
+	// sorterが指定されていればドキュメントをソートしてリターン
+	if ps.sorter == nil {
+		return documents, nil
+	}
+
+	return ps.sorter.Sort(documents, inverted, tokens)
+}
+
+// フレーズを含むか検索
+func isPhraseMatch(tokenStream TokenStream, postings []*Postings) bool {
+	relativePositionsList := make([][]uint64, tokenStream.Size())
+	for i := 0; i < tokenStream.Size(); i++ {
+		relativePositionsList[i] = decrementSlice(postings[i].Positions, uint64(i))
+	}
+
+	// 共通の要素が存在すればフレーズが存在する
+	return hasCommon(relativePositionsList)
+}
+
+func decrementSlice(s []uint64, n uint64) []uint64 {
+	result := make([]uint64, len(s))
+	for i, e := range s {
+		result[i] = e - n
+	}
+	return result
+}
+
+func hasCommon(ss [][]uint64) bool {
+	s0 := ss[0]
+	for _, s1 := range ss[1:] {
+		hasCommon := false
+		for _, v1 := range s0 {
+			for _, v2 := range s1 {
+				if v1 == v2 {
+					hasCommon = true
+				}
+			}
+		}
+		if !hasCommon {
+			return false
+		}
+	}
+	return true
+
 }
