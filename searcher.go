@@ -232,6 +232,7 @@ func (ps PhraseSearcher) Search() ([]Document, error) {
 
 // フレーズを含むか検索
 func isPhraseMatch(tokenStream TokenStream, postings []*Postings) bool {
+	// 相対ポジションリストを作成
 	relativePositionsList := make([][]uint64, tokenStream.Size())
 	for i := 0; i < tokenStream.Size(); i++ {
 		relativePositionsList[i] = decrementSlice(postings[i].Positions, uint64(i))
@@ -249,6 +250,7 @@ func decrementSlice(s []uint64, n uint64) []uint64 {
 	return result
 }
 
+// 0番目のポジションリストと１番目以降のポジションリストに共通要素があるかどうかで判定
 func hasCommon(ss [][]uint64) bool {
 	s0 := ss[0]
 	for _, s1 := range ss[1:] {
