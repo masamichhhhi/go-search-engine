@@ -22,6 +22,15 @@ type MatchSearcher struct {
 	sorter      Sorter
 }
 
+func NewMatchSearcher(tokenStream TokenStream, logic Logic, storage Storage, sorter Sorter) MatchSearcher {
+	return MatchSearcher{
+		tokenStream: tokenStream,
+		logic:       logic,
+		storage:     storage,
+		sorter:      sorter,
+	}
+}
+
 func (ms MatchSearcher) Search() ([]Document, error) {
 	if ms.tokenStream.Size() == 0 {
 		return []Document{}, nil
@@ -172,6 +181,14 @@ type PhraseSearcher struct {
 	tokenStream TokenStream
 	storage     Storage
 	sorter      Sorter
+}
+
+func NewPhraseSearcher(tokenStream TokenStream, storage Storage, sorter Sorter) PhraseSearcher {
+	return PhraseSearcher{
+		tokenStream: tokenStream,
+		storage:     storage,
+		sorter:      sorter,
+	}
 }
 
 func (ps PhraseSearcher) Search() ([]Document, error) {
