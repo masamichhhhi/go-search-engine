@@ -21,6 +21,12 @@ type PostingList struct {
 	Postings *Postings
 }
 
+func NewPostingList(pl *Postings) PostingList {
+	return PostingList{
+		Postings: pl,
+	}
+}
+
 func (p PostingList) Size() int {
 	size := 0
 	pp := p.Postings
