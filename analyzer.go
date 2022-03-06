@@ -2,8 +2,8 @@ package gosearchengine
 
 type Analyzer struct {
 	charFilters  []CharFilter
-	tokenizer    []Tokenizer
-	tokenFilters []TokenFilters
+	tokenizer    Tokenizer
+	tokenFilters []TokenFilter
 }
 
 func (a Analyzer) Analyze(s string) TokenStream {
@@ -13,7 +13,7 @@ func (a Analyzer) Analyze(s string) TokenStream {
 
 	tokenStream := a.tokenizer.Tokenize(s)
 	for _, f := range a.tokenFilters {
-		tokenStream = f.filter(tokenStream)
+		tokenStream = f.Filter(tokenStream)
 	}
 
 	return tokenStream
