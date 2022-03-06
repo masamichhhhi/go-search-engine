@@ -5,7 +5,7 @@ type TokenID uint64
 type Token struct {
 	ID   TokenID `db:"id"`
 	Term string  `db:"term"`
-	Kana string  `db:""kana`
+	Kana string  `db:"kana"`
 }
 
 type TokenOption func(*Token)
