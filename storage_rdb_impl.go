@@ -39,6 +39,15 @@ type DBConfig struct {
 	DB       string
 }
 
+func (s StorageRdbImpl) CountDocuments() (int, error) {
+	var count int
+	row := s.DB.QueryRow(`select count(*) from documents`)
+	if err := row.Scan(&count); err != nil {
+		return -1, err
+	}
+	return count, nil
+}
+
 func (s StorageRdbImpl) AddDocument(doc Document) (DocumentID, error) {
 	res, err := s.DB.NamedExec(`insert into documents (body, token_count) values (:body, :token_count)`,
 		map[string]interface{}{
