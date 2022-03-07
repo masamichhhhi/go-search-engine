@@ -6,6 +6,12 @@ type Tokenizer interface {
 	Tokenize(string) TokenStream
 }
 
+type StandardTokenizer struct{}
+
+func NewStandardTokenizer() StandardTokenizer {
+	return StandardTokenizer{}
+}
+
 type MorphologicalTokenizer struct {
 	morphology morphology.Morphology
 }
