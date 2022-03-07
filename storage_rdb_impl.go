@@ -57,6 +57,24 @@ func (s StorageRdbImpl) AddDocument(doc Document) (DocumentID, error) {
 	return DocumentID(insertedID), err
 }
 
+func (s StorageRdbImpl) AddToken(token Token) (TokenID, error) {
+	res, err := s.DB.NamedExec(`insert into tokens (term) values (:term)`,
+		map[string]interface{}{
+			"term": token.Term,
+		},
+	)
+
+	if err != nil {
+		return 0, err
+	}
+
+	insertedID, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	return TokenID(insertedID), nil
+}
+
 func (s StorageRdbImpl) UpsertInvertedIndex(inverted InvertedIndex) error {
 	encoded, err := encode(inverted)
 	if err != nil {
