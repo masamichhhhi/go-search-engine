@@ -7,6 +7,15 @@ type Indexer struct {
 	indexSizeThreshold int // ストレージにマージするときの閾値
 }
 
+func NewIndexer(storage Storage, analyzer Analyzer, indexSizeThreshold int) *Indexer {
+	return &Indexer{
+		storage:            storage,
+		analyzer:           analyzer,
+		invertedIndex:      make(InvertedIndex),
+		indexSizeThreshold: indexSizeThreshold,
+	}
+}
+
 func (i *Indexer) AddDocument(doc Document) error {
 	// ドキュメントをトークンの集合に分解
 	tokens := i.analyzer.Analyze(doc.Body)
