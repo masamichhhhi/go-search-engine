@@ -1,6 +1,11 @@
 package gosearchengine
 
-import "github.com/masamichhhhi/go-search-engine/morphology"
+import (
+	"strings"
+	"unicode"
+
+	"github.com/masamichhhhi/go-search-engine/morphology"
+)
 
 type Tokenizer interface {
 	Tokenize(string) TokenStream
@@ -10,6 +15,17 @@ type StandardTokenizer struct{}
 
 func NewStandardTokenizer() StandardTokenizer {
 	return StandardTokenizer{}
+}
+
+func (t StandardTokenizer) Tokenize(s string) TokenStream {
+	terms := strings.FieldsFunc(s, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsNumber(r)
+	})
+	tokens := make([]Token, len(terms))
+	for i, term := range terms {
+		tokens[i] = NewToken(term)
+	}
+	return NewTokenStream(tokens)
 }
 
 type MorphologicalTokenizer struct {
