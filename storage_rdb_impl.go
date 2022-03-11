@@ -2,6 +2,7 @@ package gosearchengine
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/gob"
 	"fmt"
 
@@ -47,6 +48,16 @@ func (s StorageRdbImpl) CountDocuments() (int, error) {
 	}
 	return count, nil
 }
+
+func (s StorageRdbImpl) GetAllDocuments() ([]Document, error) {
+	var docs []Document
+	if err := s.DB.Select(&docs, `select * from documents`); err != nil {
+		return nil, err
+	}
+	return docs, nil
+}
+
+func (s StorageRdbImpl) GetDocuments([]DocumentID) ([]Document, error)
 
 func (s StorageRdbImpl) AddDocument(doc Document) (DocumentID, error) {
 	res, err := s.DB.NamedExec(`insert into documents (body, token_count) values (:body, :token_count)`,
@@ -101,6 +112,37 @@ func (s StorageRdbImpl) UpsertInvertedIndex(inverted InvertedIndex) error {
 	}
 
 	return nil
+}
+
+func (s StorageRdbImpl) GetTokenByTerm(term string) (*Token, error) {
+	var token Token
+	if err := s.DB.Get(&token, `select * from tokens where term = ?`, term); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &token, nil
+
+}
+
+func (s StorageRdbImpl) GetTokensByTerms(terms []string) ([]Token, error) {
+	if len(terms) == 0 {
+		return []Token{}, nil
+	}
+
+	query, args, err := sqlx.In(`select * from tokens where term in (?) order by field (term, ?)`, terms, terms)
+	if err != nil {
+		return nil, err
+	}
+
+	var tokens []Token
+
+	if err := s.DB.Select(&tokens, query, args...); err != nil {
+		return nil, err
+	}
+	return tokens, nil
 }
 
 func (s StorageRdbImpl) GetInvertedIndexByTokenIDs(ids []TokenID) (InvertedIndex, error) {
