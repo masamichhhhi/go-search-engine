@@ -57,7 +57,27 @@ func (s StorageRdbImpl) GetAllDocuments() ([]Document, error) {
 	return docs, nil
 }
 
-func (s StorageRdbImpl) GetDocuments([]DocumentID) ([]Document, error)
+func (s StorageRdbImpl) GetDocuments(ids []DocumentID) ([]Document, error) {
+	if len(ids) == 0 {
+		return []Document{}, nil
+	}
+
+	intDocIDs := make([]int, len(ids))
+	for i, id := range ids {
+		intDocIDs[i] = int(id)
+	}
+
+	sql, params, err := sqlx.In(`select * from documents where id in (?)`, intDocIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	var docs []Document
+	if err = s.DB.Select(&docs, sql, params...); err != nil {
+		return nil, err
+	}
+	return docs, nil
+}
 
 func (s StorageRdbImpl) AddDocument(doc Document) (DocumentID, error) {
 	res, err := s.DB.NamedExec(`insert into documents (body, token_count) values (:body, :token_count)`,
